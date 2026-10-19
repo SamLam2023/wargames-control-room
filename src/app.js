@@ -157,6 +157,7 @@ function renderControls(){
 function render(){renderBoard();renderCode();renderControls();}
 
 function reset(){
+  if($('about-game').open)$('about-game').close();
   invalidate();
   displays?.stopWar();
   $('offline-screen').hidden=true;
@@ -454,7 +455,15 @@ function showEnding(kind){
   const title=document.createElement('p');title.textContent=kind==='resolved'?'THE ONLY WINNING MOVE\nIS NOT TO PLAY.':'WINNER: NONE';title.style.whiteSpace='pre-line';
   const note=document.createElement('small');note.textContent=kind==='resolved'?'Crisis averted. You taught it to stop.':'Nuclear war has occurred. Try another choice.';
   const button=document.createElement('button');button.textContent='RECONNECT';button.addEventListener('click',()=>{reset();$('connect-button').focus({preventScroll:true});});
-  target.append(symbol,title,note,button);
+  const about=document.createElement('button');about.id='ending-about';about.textContent='ABOUT THIS GAME';about.setAttribute('aria-haspopup','dialog');about.setAttribute('aria-controls','about-game');about.addEventListener('click',openAbout);
+  const actions=document.createElement('div');actions.className='ending-actions';actions.append(button,about);
+  target.append(symbol,title,note,actions);
+}
+
+function openAbout(){
+  if($('about-game').open)return;
+  $('about-game').showModal();
+  document.body.classList.add('about-open');
 }
 
 function continueOne(){
@@ -485,10 +494,18 @@ $('zero-players').addEventListener('click',()=>run(zeroPlayers));
 $('one-player').addEventListener('click',continueOne);
 $('restart-button').addEventListener('click',()=>{reset();$('connect-button').focus({preventScroll:true});});
 $('offline-reset').addEventListener('click',()=>{reset();$('connect-button').focus({preventScroll:true});});
+$('offline-about').addEventListener('click',openAbout);
+$('about-game').addEventListener('close',()=>document.body.classList.remove('about-open'));
+$('about-game').addEventListener('click',event=>{
+  if(event.target!==event.currentTarget)return;
+  const bounds=event.currentTarget.getBoundingClientRect();
+  if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)event.currentTarget.close();
+});
 $('command-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.currentTarget.readOnly)submitCommand();});
 $('command-input').addEventListener('keydown',event=>{if(!event.currentTarget.readOnly&&(event.key.length===1||event.key==='Backspace'))sound.key();});
 
 document.addEventListener('keydown',event=>{
+  if($('about-game').open)return;
   const element=event.target;
   if(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element.isContentEditable)return;
   if(state.phase==='playing'&&/^[1-9]$/.test(event.key)){event.preventDefault();run(()=>humanMove(Number(event.key)-1));}

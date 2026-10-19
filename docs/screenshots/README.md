@@ -2,7 +2,7 @@
 
 Captured at 1600 × 1000 from the browser game running on a local Cloudflare Pages/D1 preview. These are real gameplay states. Player-record numbers are local test data. The local clock was advanced only to capture the alternative ending without waiting three minutes; the game code and cinematic timings were unchanged.
 
-[Play the game](https://wargames-control-room.pages.dev) · [Social media drafts](../social-posts.md)
+[Play the game](https://wargames-control-room.pages.dev)
 
 ## Control room
 

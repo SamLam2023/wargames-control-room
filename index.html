@@ -142,8 +142,20 @@
   </div>
   <section id="offline-screen" class="offline-screen" aria-labelledby="offline-title" hidden>
     <h1 id="offline-title">SYSTEM OFFLINE</h1>
-    <button id="offline-reset">RESET</button>
+    <div class="offline-actions">
+      <button id="offline-about" aria-haspopup="dialog" aria-controls="about-game">ABOUT THIS GAME</button>
+      <button id="offline-reset">RESET</button>
+    </div>
   </section>
+  <dialog id="about-game" class="about-game" aria-labelledby="about-title">
+    <h2 id="about-title" tabindex="-1" autofocus>ABOUT THIS GAME</h2>
+    <p>WarGames Control Room is a browser game inspired by the ending of <cite>WarGames</cite> (1983), in which the supercomputer Joshua learns that nuclear war has no winner.</p>
+    <p>Take your seat in a fictional nuclear control room and play tic-tac-toe against Joshua while a three-minute launch-code countdown runs. Complete three human games to unlock the 0-player option. Let Joshua play itself, discover only draws, and test the same lesson in nuclear-war simulations.</p>
+    <blockquote>THE ONLY WINNING MOVE<br>IS NOT TO PLAY.</blockquote>
+    <p>The irony? This game about an AI learning when to stop was built with AI, using Codex. Hopefully it learned the lesson along the way: please don't start a nuclear war.</p>
+    <p class="about-note">An independent fan game. All military data is fictional. Not affiliated with the filmmakers or rights holders.</p>
+    <form method="dialog"><button>CLOSE</button></form>
+  </dialog>
   <noscript><p class="noscript-message">Enable JavaScript to enter the control room.</p></noscript>
 </body>
 </html>

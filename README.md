@@ -10,7 +10,7 @@ The game interface and dialogue are in English. The frontend uses vanilla JavaSc
 
 ![Playing tic-tac-toe against Joshua in the CRT control room](docs/screenshots/03-human-game.png)
 
-[View all nine gameplay screenshots](docs/screenshots/README.md), including the opening, self-play, nuclear simulation and both endings. [Chinese and English social media drafts](docs/social-posts.md) are also included.
+[View all nine gameplay screenshots](docs/screenshots/README.md), including the opening, self-play, nuclear simulation and both endings.
 
 ## Play locally
 
@@ -31,6 +31,7 @@ Open <http://localhost:4173>. Press CONNECT to start the game and unlock audio. 
 - Selecting 0 players before time expires holds the countdown. Joshua plays itself, finds only draws, then tries increasingly fast nuclear scenarios across the surrounding monitors for 15 seconds before the peaceful ending.
 - If time expires, the nuclear ending shows a 15-second global exchange, followed by interference and SYSTEM OFFLINE. Music continues until RESET.
 - AUDIO controls music, sound effects and electronic speech. FX LOW and the operating system's reduced-motion preference reduce effects. RESET cancels the current game, dialogue and animation.
+- Both endings include ABOUT THIS GAME, a popup about the film inspiration and how the game was made with Codex. Close it with CLOSE, Escape or a click outside the popup.
 
 All military counts, launch sites, codes and trajectories are fictional entertainment data. The in-game launch code is a story prop, not a credential.
 

@@ -160,10 +160,22 @@ body[data-phase='signal-lost'] .monitor-wall{animation:signal-break .65s steps(1
 @keyframes signal-break{0%,100%{opacity:1;transform:none}18%{opacity:.6;transform:translateX(-6px);clip-path:inset(9% 0 26%)}39%{opacity:.35;transform:translateX(9px);clip-path:inset(32% 0 7%)}62%{opacity:.5;transform:translateX(-3px);clip-path:inset(5% 0 48%)}84%{opacity:.12;transform:none;clip-path:inset(46% 0 40%)}100%{opacity:0;clip-path:inset(49.5% 0)}}
 .offline-screen{position:fixed;inset:0;z-index:100;background:#020405;display:grid;place-items:center;padding:24px;color:var(--red)}
 .offline-screen h1{margin:0;font-size:clamp(30px,5.2vw,76px);font-weight:400;letter-spacing:.08em;line-height:1.2;text-align:center}
-.offline-screen button{position:absolute;left:50%;bottom:calc(32px + env(safe-area-inset-bottom));transform:translateX(-50%);min-width:150px;min-height:48px;padding:10px 24px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:19px;letter-spacing:.08em}
+.offline-actions{position:absolute;left:24px;right:24px;bottom:calc(32px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:12px}
+.offline-screen button{min-width:150px;min-height:48px;padding:10px 24px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:19px;letter-spacing:.08em}
 .offline-screen button:hover{background:#29100d}
 .offline-screen button:focus-visible{outline:2px solid var(--red);outline-offset:6px}
 body[data-phase='failed']{overflow:hidden}
+.ending-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+body.about-open{overflow:hidden}
+.about-game{width:calc(100% - 32px);max-width:640px;max-height:calc(100svh - 32px);overflow-y:auto;margin:auto;padding:clamp(20px,4vw,36px);border:1px solid var(--frame);background:var(--screen);color:var(--ink);font-family:system-ui,sans-serif;font-size:16px;line-height:1.65;overscroll-behavior:contain}
+.about-game::backdrop{background:#000d}
+.about-game h2{margin:0 0 24px;font-family:var(--terminal);font-size:clamp(20px,4vw,28px);font-weight:400;color:var(--cyan);line-height:1.25}
+.about-game p{margin:0 0 18px}
+.about-game blockquote{margin:26px 0;color:var(--green);font-family:var(--terminal);font-size:clamp(18px,3.5vw,24px);line-height:1.5}
+.about-game .about-note{font-size:13px;color:var(--muted)}
+.about-game form{display:flex;justify-content:flex-end;margin-top:26px}
+.about-game button{min-width:100px;min-height:44px;padding:10px 20px;border:1px solid var(--green);background:transparent;color:var(--green);font-family:var(--terminal);font-size:14px}
+.about-game button:hover{background:#15332a}
 @media(max-width:760px){
   body:is([data-phase='destruction'],[data-phase='signal-lost'],[data-war-mode='simulation']) .monitor-wall{position:fixed;inset:10px 10px 46px;z-index:20;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));grid-template-areas:none;gap:5px;height:calc(100svh - 56px);min-height:0;max-height:none}
   body:is([data-phase='destruction'],[data-phase='signal-lost'],[data-war-mode='simulation']) .monitor{grid-area:auto;min-height:0;padding:0}
