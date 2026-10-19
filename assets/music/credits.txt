@@ -1,0 +1,14 @@
+CONTROL ROOM — an original four-cue orchestral suite, composed for this game.
+Intro / Gameplay / Crisis / Resolution. Composition source: scripts/render-score.py.
+Instrumentation: acoustic piano, pizzicato and bowed strings, cello, double bass,
+clarinet, French horn, harp, timpani, orchestral bass drum and tubular bells.
+Rendered at 44.1 kHz stereo using FluidSynth and GeneralUser GS 2.0.3.
+
+GeneralUser GS by S. Christian Collins:
+https://www.schristiancollins.com/generaluser.php
+https://github.com/mrbumpy409/GeneralUser-GS
+License: soundfont-license.txt. Its license permits music creation and recordings,
+including commercial use. The SoundFont itself is not included in this website.
+
+The compositions and recordings are original to this game. No film soundtrack,
+film dialogue recording, or extracted movie audio is used in these music files.

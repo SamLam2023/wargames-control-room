@@ -1,0 +1,49 @@
+async (page) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:8788');await page.setViewportSize({width:1600,height:1000});
+  await page.locator('#connect-button').click();await page.locator('#skip-intro').click();await page.locator('#one-player').click();
+  await page.keyboard.press('1');
+  await page.waitForFunction(()=>!!document.querySelector('.cell:not(:disabled)'),{},{timeout:5000});
+  await page.evaluate(()=>document.fonts.ready);
+  const desktop=await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,cells:[...document.querySelectorAll('.cell')].map(c=>({width:c.getBoundingClientRect().width,height:c.getBoundingClientRect().height,border:getComputedStyle(c).borderRightWidth}))}));
+  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>scrollTo(0,0));
+  const mobile=await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,console:document.querySelector('.operator-console').getBoundingClientRect().toJSON(),cell:document.querySelector('.cell').getBoundingClientRect().toJSON()}));
+  if(desktop.overflow||mobile.overflow||mobile.cell.width<44)throw Error('Layout or touch targets failed');
+  while(await page.locator('body').getAttribute('data-phase')==='playing'){
+    const move=await page.evaluate(async()=>{const b=[...document.querySelectorAll('.cell')].map(c=>c.textContent||null);return(await import('/src/engine.js')).perfectMove(b,'X',()=>0);});
+    await page.locator(`[data-cell="${move}"]`).click();
+    await page.waitForFunction(()=>document.body.dataset.phase!=='playing'||!!document.querySelector('.cell:not(:disabled)'),{},{timeout:5000});
+  }
+  for(let extra=0;extra<2;extra++){
+    await page.locator('#one-player').click();
+    while(await page.locator('body').getAttribute('data-phase')==='playing'){
+      const i=await page.evaluate(async()=>(await import('/src/engine.js')).perfectMove([...document.querySelectorAll('.cell')].map(c=>c.textContent||null),'X',()=>0));
+      await page.locator(`[data-cell="${i}"]`).click();
+      await page.waitForFunction(()=>document.body.dataset.phase!=='playing'||!!document.querySelector('.cell:not(:disabled)'));
+    }
+  }
+  await page.locator('#effects-toggle').click();
+  if(await page.locator('#effects-toggle').getAttribute('aria-pressed')!=='true')throw Error('Reduced effects toggle failed');
+  await page.locator('#zero-players').click();
+  if(await page.locator('body').getAttribute('data-phase')!=='selfplay')throw Error('Zero-player selection failed');
+  await page.waitForFunction(()=>document.body.dataset.phase==='simulation',{},{timeout:25000});
+  const selfPlay=await page.locator('#round-label').innerText();
+  if(!selfPlay.includes('0512')||!selfPlay.includes('WINS: 0'))throw Error('Draw learning count failed');
+  if(await page.locator('#code-status').textContent()!=='10 / 10 LOCKED')throw Error('Code was not cracked before learning');
+  await page.waitForFunction(()=>document.body.dataset.phase==='resolved'&&!document.querySelector('#ending-view').hidden,{},{timeout:45000});
+  if(await page.locator('#defcon-number').innerText()!=='5')throw Error('Wrong peace DEFCON');
+  if(await page.locator('#authorization').innerText()!=='LAUNCH ABORTED')throw Error('Launch not aborted');
+  if(!await page.locator('#mind-content').innerText().then(t=>t.includes('THE ONLY WINNING MOVE')&&t.includes('CHESS')))throw Error('Ending dialogue missing');
+  await page.locator('#audio-toggle').click();
+  if(await page.locator('#audio-toggle').getAttribute('aria-pressed')!=='false')throw Error('Mute failed');
+  await page.setViewportSize({width:1600,height:1000});await page.evaluate(()=>scrollTo(0,0));
+  await page.locator('#restart-button').click();await page.locator('#connect-button').click();await page.locator('#skip-intro').click();await page.locator('#one-player').click();
+  await page.locator('[data-cell="0"]').click();await page.locator('#restart-button').click();
+  await page.waitForTimeout(1200);
+  if(await page.locator('body').getAttribute('data-phase')!=='standby')throw Error('Reset did not cancel AI');
+  if(await page.locator('.cell').allTextContents().then(x=>x.join(''))!=='')throw Error('Stale AI move after reset');
+  await page.locator('#connect-button').click();await page.waitForTimeout(250);await page.locator('#restart-button').click();await page.waitForTimeout(700);
+  if(await page.locator('body').getAttribute('data-phase')!=='standby')throw Error('Reset did not cancel intro');
+  if(errors.length)throw Error(errors.join('\n'));
+  return {desktop,mobile,selfPlay,peace:'passed',mute:'passed',reducedEffects:'passed',keyboard:'passed',resetCancellation:'passed',consoleErrors:errors};
+}

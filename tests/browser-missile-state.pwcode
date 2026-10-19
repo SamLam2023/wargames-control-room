@@ -1,0 +1,43 @@
+async page=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(()=>{Math.random=()=>0;const now=Date.now.bind(Date);window.__clockOffset=0;Date.now=()=>now()+window.__clockOffset;});
+  await page.goto('http://127.0.0.1:8788');
+  await page.evaluate(async()=>{
+    const {Displays}=await import('/src/displays.js');const draw=Displays.prototype.draw;
+    Displays.prototype.draw=function(now){window.__display=this;return draw.call(this,now);};
+    window.__probeMissiles=state=>{
+      const display=window.__display,attack=display.attacks,ctx=display.canvases.radar.getContext('2d'),rect=ctx.fillRect;
+      let routes=0,blips=0;display.attacks=function(...args){routes++;return attack.apply(this,args);};ctx.fillRect=function(...args){blips++;return rect.apply(this,args);};
+      try{const now=performance.now();display.drawUS(now,state);display.drawWorld(now,state);display.drawSoviet(now,state);display.drawRadar(now,state);}
+      finally{display.attacks=attack;ctx.fillRect=rect;}
+      return{phase:state.phase,launched:state.missilesLaunched,routes,blips};
+    };
+  });
+  await page.waitForFunction(()=>!!window.__display);const samples=[];
+  const clear=async()=>{
+    const sample=await page.evaluate(()=>({...window.__probeMissiles(window.__display.getState()),tracked:document.querySelector('#tracked-count').textContent,flight:document.querySelector('#flight-count').textContent,radar:document.querySelector('#radar-tracks').textContent}));samples.push(sample);
+    if(sample.launched||sample.routes||sample.blips||Number(sample.tracked)||Number(sample.flight)||Number(sample.radar))throw Error('Premature missiles '+JSON.stringify(sample));
+  };
+  await clear();await page.locator('#connect-button').click();await clear();await page.locator('#skip-intro').click();await clear();
+  for(let round=0;round<3;round++){
+    await page.locator('#one-player').click();await clear();
+    while(await page.locator('body').getAttribute('data-phase')==='playing'){
+      const i=await page.evaluate(async()=>(await import('/src/engine.js')).perfectMove([...document.querySelectorAll('.cell')].map(c=>c.textContent||null),'X',()=>0));
+      await page.locator(`[data-cell="${i}"]`).click();await page.waitForFunction(()=>document.body.dataset.phase!=='playing'||!!document.querySelector('.cell:not(:disabled)'));
+    }
+    await clear();
+  }
+  const simulation=await page.evaluate(()=>window.__probeMissiles({...window.__display.getState(),phase:'simulation'}));
+  if(simulation.routes!==3||simulation.blips!==7)throw Error('Simulation lost missile visuals');
+  await page.setViewportSize({width:390,height:844});await page.locator('.world-monitor').screenshot({path:'output/playwright/prelaunch-global-tracking.png'});await page.setViewportSize({width:1600,height:1000});
+  await page.evaluate(()=>{window.__clockOffset+=180000;document.dispatchEvent(new Event('visibilitychange'));});
+  await page.waitForFunction(()=>document.body.dataset.phase==='launching');await clear();
+  await page.waitForFunction(()=>window.__display.getState().missilesLaunched,{},{timeout:22000});
+  const actual=await page.evaluate(()=>({...window.__probeMissiles(window.__display.getState()),flight:Number(document.querySelector('#flight-count').textContent),radar:Number(document.querySelector('#radar-tracks').textContent)}));
+  if(actual.routes!==3||actual.blips!==7||actual.flight!==450||actual.radar!==7)throw Error('Actual launch lost missile visuals '+JSON.stringify(actual));
+  await page.waitForFunction(()=>document.body.dataset.phase==='destruction');
+  if(await page.locator('.war-map:not([hidden])').count()!==12)throw Error('Destruction maps missing');
+  await page.locator('#restart-button').dispatchEvent('click');await clear();await page.waitForTimeout(800);await clear();
+  if(errors.length)throw Error(errors.join('\n'));
+  return{samples,simulation,actual,destructionMaps:12,reset:'clear',errors};
+}

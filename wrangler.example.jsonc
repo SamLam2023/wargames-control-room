@@ -1,0 +1,14 @@
+// Copy to wrangler.jsonc (gitignored), then insert your own D1 database_id.
+{
+  "name": "wargames-control-room",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-19",
+  "d1_databases": [
+    {
+      "binding": "STATS_DB",
+      "database_name": "wargames-control-room-stats",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

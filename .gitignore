@@ -1,0 +1,40 @@
+# Generated files and local tools
+node_modules/
+dist/
+output/
+.wrangler/
+.playwright-cli/
+.playwright/
+.impeccable/
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+
+# Local Cloudflare configuration and environment secrets
+wrangler.jsonc
+wrangler.toml
+wrangler.local.*
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+!.dev.vars.example
+.secrets/
+
+# Credentials, private keys and local databases
+.ssh/
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm

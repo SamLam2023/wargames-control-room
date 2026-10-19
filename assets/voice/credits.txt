@@ -1,0 +1,10 @@
+Original Joshua-style electronic dialogue rendered for this game.
+Formant speech: eSpeak NG, generic en-us voice, monotone low pitch.
+https://github.com/espeak-ng/espeak-ng
+eSpeak NG is a GPL-3.0-or-later engine; no engine binaries or voice databases
+are distributed with this website, only rendered speech from the listed text.
+
+Original processing: terminal-speaker band limiting, restrained 38 Hz ring
+modulation, short metallic echoes and quantization. Source: scripts/render-voice.py.
+No extracted film audio, actor recording or actor voice model is used.
+These clips are generic retro computer speech, not a reproduction of an actor.

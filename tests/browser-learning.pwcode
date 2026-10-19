@@ -1,0 +1,73 @@
+async page=>{
+  const errors=[],launched=[];page.on('pageerror',e=>errors.push(e.message));
+  page.on('request',r=>{if(r.url().endsWith('/api/stats')&&r.method()==='POST'&&r.postData()?.includes('"launched"'))launched.push(r.postData());});
+  page.setDefaultTimeout(10000);await page.addInitScript(()=>{Math.random=()=>0;const now=Date.now.bind(Date);window.__clockOffset=0;Date.now=()=>now()+window.__clockOffset;});
+  await page.setViewportSize({width:1600,height:1000});await page.goto('http://127.0.0.1:8788');
+  await page.evaluate(async()=>{
+    window.__learning={speech:[],flashes:[],maxFlash:0,lastOpacity:0};
+    const {Displays}=await import('/src/displays.js'),{Soundtrack}=await import('/src/audio.js');
+    const start=Displays.prototype.startWar,draw=Displays.prototype.drawWar,stop=Displays.prototype.stopWar,speak=Soundtrack.prototype.speak;
+    Displays.prototype.startWar=function(options){start.call(this,options);if(options?.simulation)window.__learning.start=this.warStart;};
+    Displays.prototype.drawWar=function(now){draw.call(this,now);if(this.warSimulation){
+      const n=window.__learning;n.cycles??=[];
+      if(n.cycles.at(-1)?.cycle!==this.simulationCycle)n.cycles.push({cycle:this.simulationCycle,time:now-this.warStart,from:this.warViews[0].routes[0].missile.from,to:this.warViews[0].routes[0].missile.to});
+      n.maxCachedRoutes=Math.max(n.maxCachedRoutes||0,...this.warViews.filter(v=>!v.cover.hidden).map(v=>v.routes.length));
+    }};
+    Displays.prototype.stopWar=function(){const learning=this.warSimulation;stop.call(this);if(learning){window.__learning.restored=performance.now();window.__learning.restoredMaps=document.querySelectorAll('.war-map:not([hidden])').length;}};
+    Soundtrack.prototype.speak=function(text){const entry={text,start:performance.now()};window.__learning.speech.push(entry);const done=speak.call(this,text);done.then(status=>{entry.end=performance.now();entry.status=status;});return done;};
+    window.__learningTimer=setInterval(()=>{const opacity=Number(document.querySelector('.war-flash').style.opacity)||0;const n=window.__learning;if(opacity>0&&n.lastOpacity===0)n.flashes.push(performance.now());n.lastOpacity=opacity;n.maxFlash=Math.max(n.maxFlash,opacity);},20);
+  });
+  await page.locator('#connect-button').click();await page.locator('#skip-intro').click();
+  const gates=[];
+  for(let completed=0;completed<=3;completed++){
+    const hidden=await page.locator('#zero-players').isHidden();gates.push({completed,hidden});
+    if(hidden!==(completed<3))throw Error('Wrong unlock point '+JSON.stringify(gates));
+    if(completed<3){
+      await page.locator('#zero-players').dispatchEvent('click');await page.locator('#command-input').fill('0');await page.locator('#command-input').press('Enter');
+      if(!['choosing','between'].includes(await page.locator('body').getAttribute('data-phase')))throw Error('Zero bypass before three games');
+      await page.locator('#one-player').click();
+      while(await page.locator('body').getAttribute('data-phase')==='playing'){
+        const i=await page.evaluate(async()=>(await import('/src/engine.js')).perfectMove([...document.querySelectorAll('.cell')].map(c=>c.textContent||null),'X',()=>0));
+        await page.locator(`[data-cell="${i}"]`).click();await page.waitForFunction(()=>document.body.dataset.phase!=='playing'||!!document.querySelector('.cell:not(:disabled)'));
+      }
+    }
+  }
+  await page.locator('#zero-players').click();
+  const held=await page.locator('#launch-countdown').innerText();
+  await page.evaluate(()=>{window.__clockOffset+=190000;document.dispatchEvent(new Event('visibilitychange'));});
+  if(await page.locator('#countdown-label').innerText()!=='SIMULATION HOLD'||await page.locator('#launch-countdown').innerText()!==held)throw Error('Zero players did not hold the actual launch countdown');
+  await page.waitForFunction(()=>document.body.dataset.warMode==='simulation',{},{timeout:30000});
+  const before=await page.locator('.cell').allTextContents();await page.waitForTimeout(700);const after=await page.locator('.cell').allTextContents();
+  if(before.join('')===after.join(''))throw Error('Central self-play stopped during map simulation');
+  if(await page.locator('.war-map:not([hidden])').count()!==11||!await page.locator('#board-view').isVisible()||!await page.locator('#game-screen .war-map').isHidden())throw Error('Simulation did not preserve central game');
+  await page.waitForTimeout(3400);await page.screenshot({path:'output/playwright/learning-desktop.png'});
+  const layouts=[];
+  for(const width of [390,320]){
+    await page.setViewportSize({width,height:844});
+    const layout=await page.evaluate(()=>{
+      const panel=document.querySelector('#game-screen').getBoundingClientRect();const cells=[...document.querySelectorAll('.cell')].map(n=>n.getBoundingClientRect());
+      return{width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,panels:[...document.querySelectorAll('.monitor')].every(n=>{const r=n.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth;}),boardFits:cells.every(r=>r.top>=panel.top&&r.bottom<=panel.bottom&&r.left>=panel.left&&r.right<=panel.right)};
+    });
+    if(layout.overflow||!layout.panels||!layout.boardFits)throw Error('Learning layout failed '+JSON.stringify(layout));
+    await page.screenshot({path:`output/playwright/learning-${width}.png`});layouts.push(layout);
+  }
+  await page.setViewportSize({width:1600,height:1000});
+  await page.waitForFunction(()=>!!window.__learning.restored,{},{timeout:20000});
+  if(await page.locator('.war-map:not([hidden])').count()||!await page.locator('.terminal-monitor h2').isVisible()||await page.locator('#offline-screen').isVisible())throw Error('Normal control room was not restored');
+  await page.screenshot({path:'output/playwright/learning-restored.png'});
+  await page.waitForFunction(()=>window.__learning.speech.some(s=>s.text.includes('nice game of chess')),{},{timeout:30000});
+  const result=await page.evaluate(()=>{clearInterval(window.__learningTimer);return window.__learning;});
+  const greeting=result.speech.find(s=>s.text==='Greetings, Professor Falken.');
+  const quote=result.speech.find(s=>s.text.includes('The only winning move')),chess=result.speech.find(s=>s.text.includes('nice game of chess'));
+  if(result.restored-result.start<15000||result.restored-result.start>16000||result.restoredMaps!==0)throw Error('Wrong learning sequence timing '+JSON.stringify(result));
+  if(result.flashes.length!==3||result.maxFlash<.55||result.flashes[0]-result.start<11400||greeting.start-result.restored<590)throw Error('Flash or dialogue order failed '+JSON.stringify(result));
+  if(result.cycles.length<25||result.maxCachedRoutes!==72||new Set(result.cycles.map(c=>c.to.join(','))).size<15)throw Error('Scenarios did not accelerate or vary '+JSON.stringify(result));
+  if(await page.locator('.terminal-monitor').innerText().then(t=>t.includes('THE ONLY WINNING MOVE'))||!await page.locator('#mind-content').innerText().then(t=>t.includes('THE ONLY WINNING MOVE')))throw Error('Conclusion duplicated or removed from Joshua');
+  if(quote.status!=='ended'||chess.start-quote.end<5000)throw Error('Concluding voice or five-second pause was cut short');
+  if(result.speech.some(s=>/goodbye/i.test(s.text)))throw Error('Self-play path said Goodbye');
+  if(launched.length||await page.locator('#defcon-number').innerText()!=='5'||await page.locator('#authorization').innerText()!=='LAUNCH ABORTED')throw Error('Simulation counted as real launch');
+  if(await page.evaluate(()=>/\p{Script=Han}/u.test(document.body.textContent)))throw Error('Non-English UI');
+  await page.locator('#restart-button').click();if(!await page.locator('#zero-players').isHidden())throw Error('Reset did not relock zero');
+  if(errors.length)throw Error(errors.join('\n'));
+  return {gates,layouts,mapDurationMs:result.restored-result.start,scenarioCycles:result.cycles,maximumCachedRoutes:result.maxCachedRoutes,flashes:result.flashes.length,maxFlash:result.maxFlash,greetingAfterRestoreMs:greeting.start-result.restored,conclusionGapMs:chess.start-quote.end,centralSelfPlay:'continued',simulationLaunchEvents:launched.length,reset:'relocked',errors};
+}

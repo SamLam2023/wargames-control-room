@@ -1,0 +1,40 @@
+async page=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:8788');
+  await page.evaluate(async()=>{
+    const {Displays}=await import('/src/displays.js');
+    const draw=Displays.prototype.draw;
+    Displays.prototype.draw=function(now){window.__display=this;Displays.prototype.draw=draw;return draw.call(this,now);};
+  });
+  await page.waitForFunction(()=>!!window.__display);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.waitForFunction(()=>window.__display.reduced);
+  const reduced=await page.evaluate(()=>{
+    document.body.dataset.phase='destruction';const display=window.__display;
+    display.startWar();display.drawWar(display.warStart+2870);
+    return {reduced:display.reduced,opacity:display.warFlash.style.opacity,hiddenByCSS:getComputedStyle(display.warFlash).display==='none',maps:display.warViews.filter(v=>!v.cover.hidden).length};
+  });
+  if(!reduced.reduced||reduced.opacity!=='0'||!reduced.hiddenByCSS||reduced.maps!==12)throw Error('Reduced effects failed '+JSON.stringify(reduced));
+  const reducedLearning=await page.evaluate(()=>{
+    const display=window.__display;display.startWar({simulation:true});const stages=[];
+    for(const ms of [0,6000,14999]){display.drawWar(display.warStart+ms);stages.push({opacity:display.warFlash.style.opacity,cycle:display.simulationCycle});}
+    const maps=display.warViews.filter(v=>!v.cover.hidden).length;display.stopWar();display.startWar();return {stages,maps};
+  });
+  if(reducedLearning.maps!==11||reducedLearning.stages.some(s=>s.opacity!=='0'||s.cycle!==0))throw Error('Reduced learning failed '+JSON.stringify(reducedLearning));
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.waitForFunction(()=>!window.__display.reduced);
+  const full=await page.evaluate(()=>{
+    const display=window.__display;display.drawWar(display.warStart+2870);
+    return{reduced:display.reduced,opacity:Number(display.warFlash.style.opacity),visible:getComputedStyle(display.warFlash).display!=='none'};
+  });
+  if(full.reduced||full.opacity<.6||!full.visible)throw Error('Full effects failed '+JSON.stringify(full));
+  await page.evaluate(()=>{
+    const display=window.__display;display.stopWar();display.startWar({simulation:true});display.drawWar(display.warStart+14900);
+    if(display.simulationCycle<28||!display.simulationMissiles)throw Error('Accelerated learning did not run');
+  });
+  await page.locator('#restart-button').dispatchEvent('click');
+  await page.waitForTimeout(1100);
+  const reset=await page.evaluate(()=>({phase:document.body.dataset.phase,stopped:window.__display.warStart===null,flashHidden:window.__display.warFlash.hidden,legendHidden:window.__display.warLegend.hidden,missilesReleased:window.__display.simulationMissiles===null}));
+  if(reset.phase!=='standby'||!reset.stopped||!reset.flashHidden||!reset.legendHidden||!reset.missilesReleased||errors.length)throw Error(JSON.stringify({reset,errors}));
+  return{reduced,reducedLearning,full,reset,errors};
+}

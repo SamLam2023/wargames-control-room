@@ -1,0 +1,92 @@
+async (page) => {
+  page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(()=>{Math.random=()=>0;const now=Date.now.bind(Date);window.__clockOffset=0;Date.now=()=>now()+window.__clockOffset;});
+  await page.setViewportSize({width:1600,height:1000});
+  await page.goto('http://127.0.0.1:8788');
+  await page.evaluate(async()=>{
+    window.__sfx=[];window.__speech=[];window.__phases=[];window.__nonEnglish=[];
+    const checkEnglish=()=>{const text=document.body.textContent+[...document.querySelectorAll('[aria-label],[title],[placeholder]')].map(n=>[n.getAttribute('aria-label'),n.getAttribute('title'),n.getAttribute('placeholder')].join(' ')).join(' ');if(/\p{Script=Han}/u.test(text))window.__nonEnglish.push(document.body.dataset.phase);};
+    checkEnglish();new MutationObserver(checkEnglish).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','title','placeholder']});
+    const {Soundtrack}=await import('/src/audio.js');
+    const play=Soundtrack.prototype.playEffect,speak=Soundtrack.prototype.speak,start=Soundtrack.prototype.start;
+    Soundtrack.prototype.start=async function(...args){await start.apply(this,args);window.__sound=this;};
+    Soundtrack.prototype.playEffect=function(...args){const ok=play.apply(this,args);if(ok)window.__sfx.push(args[0]);return ok;};
+    Soundtrack.prototype.speak=function(text){const phase=document.body.dataset.phase,remaining=document.querySelector('#launch-countdown').textContent;const p=speak.call(this,text);p.then(status=>window.__speech.push({text,status,phase,remaining,time:performance.now()}));return p;};
+    new MutationObserver(()=>window.__phases.push({phase:document.body.dataset.phase,time:performance.now()})).observe(document.body,{attributes:true,attributeFilter:['data-phase']});
+  });
+  await page.locator('#connect-button').click();
+  await page.waitForFunction(()=>document.body.dataset.phase==='choosing',{},{timeout:30000});
+  if(!await page.locator('#zero-players').isHidden()||!await page.locator('#zero-players').isDisabled())throw Error('Initial zero option unlocked');
+  await page.locator('#zero-players').dispatchEvent('click');
+  await page.locator('#command-input').fill('0');await page.locator('#command-input').press('Enter');
+  if(await page.locator('body').getAttribute('data-phase')!=='choosing')throw Error('Zero bypass allowed');
+  if(!await page.locator('#terminal-log').innerText().then(t=>t.includes('COMPLETE THREE GAMES FIRST')))throw Error('Missing gate message');
+  await page.screenshot({path:'output/playwright/first-game-locked.png',fullPage:true});
+  await page.locator('#one-player').click();
+  const move=async i=>{await page.locator(`[data-cell="${i}"]`).click();await page.waitForFunction(()=>document.body.dataset.phase!=='playing'||!!document.querySelector('.cell:not(:disabled)'));};
+  const summaries=[];
+  for(let round=1;round<=4;round++){
+    if(round<=2){for(const i of [0,3,6])await move(i);}
+    else while(await page.locator('body').getAttribute('data-phase')==='playing'){
+      const i=await page.evaluate(async()=>(await import('/src/engine.js')).perfectMove([...document.querySelectorAll('.cell')].map(c=>c.textContent||null),'X',()=>0));await move(i);
+    }
+    summaries.push(await page.locator('#players-result').innerText());
+    const zeroAvailable=!(await page.locator('#zero-players').isHidden())&&!(await page.locator('#zero-players').isDisabled());
+    if(zeroAvailable!==(round>=3))throw Error('Zero-player gate failed after round '+round);
+    if(round<4)await page.locator('#one-player').click();
+  }
+  await page.evaluate(()=>{window.__clockOffset+=180000;document.dispatchEvent(new Event('visibilitychange'));});
+  await page.waitForFunction(()=>document.body.dataset.phase==='destruction',{},{timeout:20000});
+  await page.evaluate(()=>{
+    const audio=window.__sound;window.__warTrack=audio.activeTrack;
+    window.__musicChecks=[];window.__flashStarts=[];window.__flashMax=0;window.__lastFlash=0;window.__rmsMax=0;
+    const analyser=audio.ctx.createAnalyser();analyser.fftSize=2048;audio.master.connect(analyser);
+    window.__endingMonitor=setInterval(()=>{
+      const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);
+      if(document.body.dataset.phase==='failed')window.__rmsMax=Math.max(window.__rmsMax,Math.sqrt(values.reduce((sum,n)=>sum+n*n,0)/values.length));
+      const opacity=Number(document.querySelector('.war-flash').style.opacity)||0;
+      if(opacity>0&&window.__lastFlash===0)window.__flashStarts.push(performance.now());
+      window.__lastFlash=opacity;window.__flashMax=Math.max(window.__flashMax,opacity);
+      window.__musicChecks.push({phase:document.body.dataset.phase,sameTrack:audio.activeTrack===window.__warTrack,stopped:!!window.__warTrack.stopAt});
+    },20);
+  });
+  const legend=await page.locator('.war-legend').innerText();
+  if(!['USA','USSR','CHINA','UK','FRANCE'].every(n=>legend.includes(n)))throw Error('National color legend missing');
+  const maps=await page.evaluate(()=>[...document.querySelectorAll('.war-map')].map(n=>({title:n.querySelector('h3').textContent,visible:!n.hidden,canvas:n.querySelector('canvas').getBoundingClientRect().toJSON(),pixels:n.querySelector('canvas').getContext('2d').getImageData(0,0,n.querySelector('canvas').width,n.querySelector('canvas').height).data.some(v=>v>0)})));
+  if(maps.length!==12||maps.some(m=>!m.visible||!m.pixels||m.canvas.height<30))throw Error('Missing war maps '+JSON.stringify(maps));
+  await page.waitForTimeout(4200);
+  await page.screenshot({path:'output/playwright/war-desktop.png'});
+  const mobile=[];
+  for(const width of [390,320]){
+    await page.setViewportSize({width,height:844});
+    const box=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,panels:[...document.querySelectorAll('.war-map')].map(n=>n.getBoundingClientRect().toJSON())}));
+    if(box.overflow||box.panels.some(b=>b.top<0||b.bottom>844||b.left<0||b.right>width))throw Error('Mobile war not all visible '+JSON.stringify(box));
+    mobile.push({width,visibleMaps:box.panels.length});
+    await page.screenshot({path:`output/playwright/war-${width}.png`});
+  }
+  await page.waitForFunction(()=>document.body.dataset.phase==='failed',{},{timeout:16000});
+  if(!await page.locator('#offline-screen').isVisible())throw Error('Offline screen missing');
+  await page.waitForTimeout(850);
+  const timing=await page.evaluate(()=>{
+    const destruction=window.__phases.find(e=>e.phase==='destruction'),lost=window.__phases.find(e=>e.phase==='signal-lost'),failed=window.__phases.find(e=>e.phase==='failed');
+    clearInterval(window.__endingMonitor);
+    return{musicContinuous:window.__musicChecks.every(c=>c.sameTrack&&!c.stopped),offlineRms:window.__rmsMax,flashMax:window.__flashMax,flashStarts:window.__flashStarts,legend:document.querySelector('.war-legend').hidden,mapsMs:lost.time-destruction.time,interferenceMs:failed.time-lost.time,speech:window.__speech,destructionTime:destruction.time,sfx:[...new Set(window.__sfx)],inert:document.querySelector('.control-room').inert,focus:document.activeElement.id,color:getComputedStyle(document.querySelector('#offline-title')).color};
+  });
+  if(timing.mapsMs<15000||timing.mapsMs>16000||timing.interferenceMs<640||!timing.inert||timing.focus!=='offline-reset'||timing.color!=='rgb(255, 112, 95)')throw Error('Wrong ending '+JSON.stringify(timing));
+  if(!timing.musicContinuous||timing.offlineRms<.001||timing.flashMax<.5||timing.flashStarts.length<5||!timing.legend)throw Error('Music or impact sequence failed '+JSON.stringify(timing));
+  if(!timing.sfx.includes('terminal-key-v1.wav')||!timing.sfx.includes('access-denied-v1.wav'))throw Error('Real console SFX not used');
+  const spoken=timing.speech.find(s=>s.text.startsWith('The launch code has been decrypted'));
+  const farewell=timing.speech.find(s=>s.text.includes('Goodbye.'));
+  if(!farewell||farewell.phase!=='launching'||farewell.remaining!=='00:00'||farewell.status!=='ended'||farewell.time>=spoken?.time)throw Error('Farewell timing or voice completion failed');
+  if(!spoken||spoken.status!=='ended'||spoken.time>timing.destructionTime)throw Error('Launch interrupted speech');
+  await page.screenshot({path:'output/playwright/offline-mobile.png'});
+  await page.setViewportSize({width:1600,height:1000});await page.screenshot({path:'output/playwright/offline-desktop.png'});
+  await page.locator('#offline-reset').press('Enter');
+  if(await page.locator('body').getAttribute('data-phase')!=='standby'||!await page.locator('#offline-screen').isHidden()||!await page.locator('#zero-players').isHidden())throw Error('Offline reset failed');
+  if(await page.locator('.control-room').getAttribute('inert')!==null)throw Error('Room remains inert');
+  if(await page.evaluate(()=>!!window.__sound.activeTrack||!document.querySelector('.war-flash').hidden||!document.querySelector('.war-legend').hidden))throw Error('Reset left music/flash/legend active');
+  if(await page.evaluate(()=>document.documentElement.lang!=='en'||window.__nonEnglish.length>0))throw Error('Non-English UI detected');
+  if(errors.length)throw Error(errors.join('\n'));
+  return{summaries,maps:maps.map(m=>m.title),mobile,...timing,reset:'passed',errors};
+}

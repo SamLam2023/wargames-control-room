@@ -1,0 +1,17 @@
+{
+  "source": "User-provided Wargames Ending.mp4",
+  "clips": [
+    {
+      "file": "terminal-key-v1.wav",
+      "source_start_seconds": 41.535,
+      "source_end_seconds": 41.578,
+      "seconds": 0.043
+    },
+    {
+      "file": "access-denied-v1.wav",
+      "source_start_seconds": 35.52,
+      "source_end_seconds": 37.19,
+      "seconds": 1.67
+    }
+  ]
+}

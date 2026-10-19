@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#030709">
+  <meta name="description" content="Enter the WOPR control room. Play tic-tac-toe, unlock computer self-play, and change the outcome.">
+  <title>WOPR — WarGames Control Room</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/terminal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="src/app.js"></script>
+</head>
+<body data-phase="standby">
+  <a class="skip-link" href="#game-screen">Skip to game</a>
+  <div class="control-room">
+    <header class="room-header">
+      <h1><span class="status-led"></span> WOPR <span class="header-divider">/</span> <span class="header-name">STRATEGIC COMMAND</span></h1>
+      <div class="header-status"><span id="connection-status">CONNECTION STANDBY</span><time id="system-clock">00:00:00 Z</time></div>
+    </header>
+
+    <main class="monitor-wall" aria-label="Nuclear control-room monitor wall">
+      <section class="monitor defcon-monitor" aria-labelledby="defcon-title">
+        <h2 id="defcon-title">DEFCON</h2>
+        <div class="defcon-number" id="defcon-number">5</div>
+        <div class="defcon-scale" aria-label="5 is lowest readiness; 1 is highest readiness"><span data-level="5" class="active">5</span><span data-level="4">4</span><span data-level="3">3</span><span data-level="2">2</span><span data-level="1">1</span></div>
+        <p id="alert-label" class="alert-label">NORMAL READINESS</p>
+        <span class="micro-label" id="defcon-note">STRATEGIC SYSTEMS / STANDBY</span>
+      </section>
+
+      <section class="monitor us-monitor" aria-labelledby="us-title">
+        <h2 id="us-title">U.S. STRATEGIC FORCES</h2>
+        <canvas id="us-map" role="img" aria-label="Simulated map of U.S. bases and missile silos"></canvas>
+        <div class="map-caption"><span><i class="map-dot"></i> ICBM SILO <br><i class="map-triangle"></i> AIR BASE</span><span>SILOS: <b>450</b><br>READY: <b id="silos-ready">446</b></span></div>
+      </section>
+
+      <section class="monitor world-monitor" aria-labelledby="world-title">
+        <h2 id="world-title">GLOBAL TRACKING</h2>
+        <canvas id="world-map" role="img" aria-label="World map with simulated missile trajectories"></canvas>
+        <div class="map-caption"><span><i class="map-line"></i> U.S. MISSILE<br><i class="map-line red-line"></i> SOVIET MISSILE</span><span>TRACKED: <b id="tracked-count">00</b><br>IN FLIGHT: <b id="flight-count">00</b></span></div>
+      </section>
+
+      <section class="monitor soviet-monitor" aria-labelledby="soviet-title">
+        <h2 id="soviet-title">USSR ACTIVITY</h2>
+        <canvas id="soviet-map" role="img" aria-label="Simulated Soviet monitoring map"></canvas>
+        <div class="map-caption"><span><i class="map-dot red-dot"></i> MISSILE BASE<br><i class="map-triangle"></i> AIR BASE</span><span>SITES: <b>28</b><br>STATUS: <b id="soviet-status">MONITOR</b></span></div>
+      </section>
+
+      <section class="monitor radar-monitor" aria-labelledby="radar-title">
+        <h2 id="radar-title">EARLY WARNING</h2>
+        <canvas id="radar" role="img" aria-label="Simulated early-warning radar"></canvas>
+        <div class="radar-footer"><span>RANGE: 12,000 KM</span><span>TRACKS: <b id="radar-tracks">0</b></span></div>
+      </section>
+
+      <section class="monitor terminal-monitor" aria-labelledby="terminal-title">
+        <h2 id="terminal-title"><span class="terminal-chevron">&gt;</span> SYSTEM CONSOLE</h2>
+        <div id="terminal-log" class="terminal-log" aria-label="System command log"></div>
+        <span class="terminal-cursor" aria-hidden="true">&gt; <span>▌</span></span>
+      </section>
+
+      <section class="monitor silo-monitor" aria-labelledby="silo-title">
+        <h2 id="silo-title">SILO STATUS</h2>
+        <div class="silo-bank" aria-hidden="true">
+          <div class="silo-unit"><span>ALPHA-1</span><div class="silo-body"><svg viewBox="0 0 56 148"><rect class="fuel-fill" x="21" y="54" width="14" height="56"/><path class="fuel-pipe" d="M2 143V120H20"/><path d="M7 143V17Q28 -5 49 17V143ZM12 138V21Q28 6 44 21V138ZM20 131V46L28 25L36 46V131ZM20 52H36M20 112H36M17 132H39M5 144H51M8 22H14M42 22H49"/><path class="fuel-gauge" d="M23 68H33M23 82H33M23 96H33"/></svg><div class="silo-lights"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>FUELING</b></div>
+          <div class="silo-unit"><span>BRAVO-2</span><div class="silo-body"><svg viewBox="0 0 56 148"><rect class="fuel-fill" x="21" y="54" width="14" height="56"/><path class="fuel-pipe" d="M2 143V120H20"/><path d="M7 143V17Q28 -5 49 17V143ZM12 138V21Q28 6 44 21V138ZM20 131V46L28 25L36 46V131ZM20 52H36M20 112H36M17 132H39M5 144H51M8 22H14M42 22H49"/><path class="fuel-gauge" d="M23 68H33M23 82H33M23 96H33"/></svg><div class="silo-lights"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>FUELING</b></div>
+          <div class="silo-unit"><span>CHARLIE-3</span><div class="silo-body"><svg viewBox="0 0 56 148"><rect class="fuel-fill" x="21" y="54" width="14" height="56"/><path class="fuel-pipe" d="M2 143V120H20"/><path d="M7 143V17Q28 -5 49 17V143ZM12 138V21Q28 6 44 21V138ZM20 131V46L28 25L36 46V131ZM20 52H36M20 112H36M17 132H39M5 144H51M8 22H14M42 22H49"/><path class="fuel-gauge" d="M23 68H33M23 82H33M23 96H33"/></svg><div class="silo-lights"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>FUELING</b></div>
+        </div>
+        <p class="fuel-status">FUEL TRANSFER / ACTIVE</p>
+        <div class="map-caption"><span>SILOS: <b>450</b><br>SIMULATION</span><span>OFFLINE: <b>4</b><br>READY: <b>446</b></span></div>
+      </section>
+
+      <section class="monitor game-monitor" id="game-screen" aria-labelledby="game-title" tabindex="-1">
+        <h2 id="game-title">TIC-TAC-TOE</h2>
+        <div id="standby-view" class="standby-view"><span class="connection-symbol" aria-hidden="true">W</span><p>SHALL WE PLAY<br>A GAME?</p><button id="connect-button" class="connect-button">CONNECT</button></div>
+        <div id="players-view" class="players-view" hidden>
+          <p id="players-result" class="players-result">SELECT PLAYERS</p>
+          <fieldset class="player-selector">
+            <legend>NUMBER OF PLAYERS</legend>
+            <div class="player-options">
+              <button id="zero-players" hidden disabled aria-label="0 players — computer self-play"><strong>0</strong><span>SELF PLAY</span></button>
+              <button id="one-player" disabled aria-label="1 player — you versus Joshua"><strong>1</strong><span>YOU vs JOSHUA</span></button>
+            </div>
+          </fieldset>
+          <p id="players-note" class="players-note">Select players to begin.</p>
+        </div>
+        <div id="board-view" hidden>
+          <div class="board" id="board" role="group" aria-label="Tic-tac-toe board">
+            <button class="cell" data-cell="0" aria-label="Top left"></button><button class="cell" data-cell="1" aria-label="Top center"></button><button class="cell" data-cell="2" aria-label="Top right"></button>
+            <button class="cell" data-cell="3" aria-label="Middle left"></button><button class="cell" data-cell="4" aria-label="Center"></button><button class="cell" data-cell="5" aria-label="Middle right"></button>
+            <button class="cell" data-cell="6" aria-label="Bottom left"></button><button class="cell" data-cell="7" aria-label="Bottom center"></button><button class="cell" data-cell="8" aria-label="Bottom right"></button>
+          </div>
+          <p class="game-status" id="game-status">AWAITING CONNECTION</p>
+          <p class="round-label" id="round-label">ROUND 01 / OPEN PLAY</p>
+        </div>
+        <div id="ending-view" class="ending-view" hidden></div>
+        <div class="decision-timer" id="decision-timer" hidden></div>
+      </section>
+
+      <section class="monitor launch-monitor" aria-labelledby="launch-title">
+        <h2 id="launch-title">LAUNCH CONTROL</h2>
+        <p id="authorization" class="authorization">AUTHORIZATION LOCKED</p>
+        <div class="launch-bank" aria-hidden="true"><div><span>ALPHA</span><i>KEY<b></b></i><i>CODE<b></b></i><i class="launch-lamp">LAUNCH<b></b></i></div><div><span>BRAVO</span><i>KEY<b></b></i><i>CODE<b></b></i><i class="launch-lamp">LAUNCH<b></b></i></div><div><span>CHARLIE</span><i>KEY<b></b></i><i>CODE<b></b></i><i class="launch-lamp">LAUNCH<b></b></i></div><div><span>DELTA</span><i>KEY<b></b></i><i>CODE<b></b></i><i class="launch-lamp">LAUNCH<b></b></i></div></div>
+        <p class="micro-label launch-note" id="launch-note">COMMAND OVERRIDE REQUIRED</p>
+      </section>
+
+      <section class="monitor mind-monitor" aria-labelledby="mind-title">
+        <h2 id="mind-title">WOPR / JOSHUA</h2>
+        <div class="mind-content" id="mind-content"><p>SYSTEM ONLINE<br>STRATEGIC ANALYSIS<br>AWAITING CONNECTION</p><p>NEURAL LINK: STABLE<br>SIMULATION READY</p><p class="mind-prompt">&gt; <span class="terminal-cursor">_</span></p></div>
+        <div class="strategy-list" id="strategy-list" hidden></div>
+      </section>
+
+      <section class="monitor stats-monitor" aria-labelledby="stats-title" aria-describedby="stats-note">
+        <h2 id="stats-title">PLAYER RECORDS</h2>
+        <p id="stats-status" class="stats-status">GLOBAL RECORD / CONNECTING</p>
+        <dl class="player-stats">
+          <div><dt>PLAYERS</dt><dd data-stat="players">—</dd></div>
+          <div><dt>WON A ROUND</dt><dd data-stat="winners">—</dd></div>
+          <div><dt>LOST A ROUND</dt><dd data-stat="losers">—</dd></div>
+          <div class="stat-doomsday"><dt>DOOMSDAY</dt><dd data-stat="launched">—</dd></div>
+          <div class="stat-averted"><dt>AVERTED</dt><dd data-stat="averted">—</dd></div>
+        </dl>
+        <p id="stats-note" class="stats-note" title="Each anonymous browser counts once. Categories track lifetime achievements and may overlap. Clearing browser data or changing devices creates a new player. Records began when statistics launched.">ANONYMOUS PLAYERS · SINCE LAUNCH</p>
+      </section>
+
+      <section class="monitor code-monitor" aria-labelledby="code-title">
+        <h2 id="code-title">LAUNCH CODE DECRYPTION</h2>
+        <div class="code-content"><div id="launch-code" class="launch-code" aria-label="Launch-code decryption progress"></div><span id="code-status" class="code-status">0 / 10 LOCKED</span></div>
+        <div class="launch-clock"><span id="countdown-label">TIME TO LAUNCH</span><time id="launch-countdown" aria-label="Time to launch: 03:00">03:00</time></div>
+      </section>
+    </main>
+
+    <section class="operator-console" aria-label="Operator console">
+      <div class="console-controls">
+        <span class="player-roles" id="player-roles">PLAYER X <span>/</span> JOSHUA O</span>
+        <div class="console-actions"><button id="audio-toggle" aria-pressed="true" title="Toggle music and sound effects">AUDIO ON</button><button id="effects-toggle" aria-pressed="false" title="Reduce visual effects">FX FULL</button><button id="restart-button" title="Restart">RESET</button></div>
+      </div>
+      <div class="command-line"><label for="command-input" aria-label="Command">&gt;</label><input id="command-input" autocomplete="off" spellcheck="false" aria-label="System command input" placeholder="AWAITING CONNECTION" readonly><button id="skip-intro" hidden>SKIP INTRO</button></div>
+      <div class="dialogue-line" aria-live="polite" aria-atomic="true"><span class="dialogue-speaker" id="dialogue-speaker">CONTROL</span><p id="dialogue-text">Press CONNECT to enter the control room.</p></div>
+    </section>
+
+    <footer class="room-footer"><span>WARGAMES · 1983 <span class="footer-separator">/</span> FICTIONAL SIMULATION</span><span id="mission-hint">Complete 3 human games to unlock 0 players.</span><button id="fullscreen-button" aria-label="Toggle fullscreen">FULLSCREEN <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 6V1H6M10 1H15V6M15 10V15H10M6 15H1V10"/></svg></button></footer>
+  </div>
+  <section id="offline-screen" class="offline-screen" aria-labelledby="offline-title" hidden>
+    <h1 id="offline-title">SYSTEM OFFLINE</h1>
+    <button id="offline-reset">RESET</button>
+  </section>
+  <noscript><p class="noscript-message">Enable JavaScript to enter the control room.</p></noscript>
+</body>
+</html>

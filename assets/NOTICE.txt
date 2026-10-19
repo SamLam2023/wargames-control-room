@@ -1,0 +1,29 @@
+Geography:
+world.json: world-atlas 2, countries-110m.json.
+https://github.com/topojson/world-atlas
+states.json: us-atlas 3, states-10m.json.
+https://github.com/topojson/us-atlas
+Underlying Natural Earth and U.S. Census geographic data are public domain.
+These maps are used only for a fictional entertainment simulation.
+All operational counts, trajectories and readiness events are fictional.
+
+Font:
+Share Tech Mono by Carrois Type Design, SIL Open Font License 1.1.
+https://github.com/google/fonts/tree/main/ofl/sharetechmono
+See font-license.txt.
+
+Sound:
+Original four-cue orchestral music, composed in scripts/render-score.py and
+rendered with FluidSynth / GeneralUser GS acoustic instrument samples.
+See music/credits.txt and music/soundfont-license.txt for source and license.
+Playback, crossfades, speech ducking and terminal effects use Web Audio in src/audio.js.
+Electronic computer dialogue is rendered with eSpeak NG formant synthesis and
+original signal processing; see voice/credits.txt and scripts/render-voice.py.
+Only rendered voice clips are shipped, with no speech-engine runtime dependency.
+Two short console effects (typing and command denial) are excerpted from the
+user-supplied WarGames ending clip at their explicit request. See sfx/source.json
+and sfx/NOTICE.txt for exact source ranges and processing. These excerpts may
+retain background ambience. Music and Joshua dialogue are separately rendered
+original assets. No video frames or film score tracks are included.
+
+WarGames (1983) is the narrative inspiration. This independent fan game is not affiliated with the filmmakers or rights holders.

@@ -1,0 +1,17 @@
+{
+  "name": "wargames-control-room",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node scripts/build.js",
+    "test": "node --test",
+    "check": "node --check src/app.js && node --check src/engine.js && node --check src/launch-clock.js && node --check src/displays.js && node --check src/war-scene.js && node --check src/audio.js && node --check src/voice-lines.js && node --check src/stats.js && node --check src/silos.js && node --check functions/api/stats.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SamLam2023/wargames-control-room.git"
+  },
+  "homepage": "https://wargames-control-room.pages.dev"
+}
