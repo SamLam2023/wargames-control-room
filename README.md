@@ -6,6 +6,12 @@ A browser game inspired by the ending of *WarGames* (1983): tic-tac-toe inside a
 
 The game interface and dialogue are in English. The frontend uses vanilla JavaScript, Canvas and Web Audio. Cloudflare Pages Functions and D1 provide shared anonymous player statistics.
 
+## Screenshots
+
+![Playing tic-tac-toe against Joshua in the CRT control room](docs/screenshots/03-human-game.png)
+
+[View all nine gameplay screenshots](docs/screenshots/README.md), including the opening, self-play, nuclear simulation and both endings. [Chinese and English social media drafts](docs/social-posts.md) are also included.
+
 ## Play locally
 
 Use Node.js 22.13 or later. The game has no npm runtime dependencies; no `npm install` is needed.
