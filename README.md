@@ -2,6 +2,8 @@
 
 A browser game inspired by the ending of *WarGames* (1983): tic-tac-toe inside a front-facing CRT monitor wall, with electronic computer speech, orchestral music and fictional strategic maps.
 
+Film reference: [Watch the WarGames (1983) ending on YouTube](https://www.youtube.com/watch?v=s93KC4AGKnY).
+
 **[Play the game](https://wargames-control-room.pages.dev)**
 
 The game interface and dialogue are in English. The frontend uses vanilla JavaScript, Canvas and Web Audio. Cloudflare Pages Functions and D1 provide shared anonymous player statistics.
